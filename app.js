@@ -1,4 +1,3 @@
-
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const effectSelect = document.getElementById('effectSelect');
@@ -36,6 +35,29 @@ const palettes = {
         { r: 255, g: 180, b: 0 },     // Orange
         { r: 255, g: 200, b: 100 },   // Light Orange
         { r: 255, g: 240, b: 150 }    // Light Yellow
+    ],
+    hearts: [
+        { r: 255, g: 20, b: 147 },   // Deep Pink
+        { r: 220, g: 20, b: 60 },    // Crimson
+        { r: 255, g: 105, b: 180 },  // Hot Pink
+        { r: 255, g: 182, b: 193 }   // Light Pink
+    ],
+    stars: [
+        { r: 255, g: 255, b: 0 },    // Yellow
+        { r: 173, g: 216, b: 230 },  // Light Blue
+        { r: 255, g: 192, b: 203 },  // Pink
+        { r: 255, g: 165, b: 0 }     // Orange
+    ],
+    bubbles: [
+        { r: 135, g: 206, b: 250 },  // Sky Blue
+        { r: 255, g: 255, b: 255 },  // White
+        { r: 175, g: 238, b: 238 }   // Pale Turquoise
+    ],
+    confetti: [
+        { r: 255, g: 69, b: 0 },     // Red
+        { r: 0, g: 128, b: 0 },      // Green
+        { r: 65, g: 105, b: 225 },   // Blue
+        { r: 238, g: 130, b: 238 }   // Violet
     ]
 };
 
@@ -83,6 +105,34 @@ class Particle {
                 this.pulse = 0;
                 this.pulseSpeed = Math.random() * 0.1 + 0.05;
                 break;
+
+            case 'hearts':
+                this.size = Math.random() * 10 + 5;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = Math.random() * -2;
+                break;
+
+            case 'stars':
+                this.size = Math.random() * 8 + 4;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+                break;
+
+            case 'bubbles':
+                this.size = Math.random() * 20 + 10;
+                this.vx = (Math.random() - 0.5) * 1;
+                this.vy = Math.random() * -1;
+                break;
+
+            case 'confetti':
+                this.size = Math.random() * 6 + 4;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = Math.random() * 2;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+                break;
         }
     }
 
@@ -93,7 +143,6 @@ class Particle {
                 this.y += this.vy;
                 this.vx *= 0.99;
                 this.vy *= 0.99;
-                this.life -= 0.01;
                 this.size += 0.2;
                 this.rotation += this.rotationSpeed;
                 break;
@@ -103,7 +152,6 @@ class Particle {
                 this.radius += this.radiusGrowth;
                 this.x = mouseX + Math.cos(this.angle) * this.radius;
                 this.y = mouseY + Math.sin(this.angle) * this.radius;
-                this.life -= 0.01;
                 break;
 
             case 'neon':
@@ -111,16 +159,23 @@ class Particle {
                 this.y += this.vy;
                 this.trail.push({ x: this.x, y: this.y });
                 if (this.trail.length > 20) this.trail.shift();
-                this.life -= 0.02;
                 break;
 
             case 'fireflies':
                 this.x += this.vx;
                 this.y += this.vy;
                 this.pulse += this.pulseSpeed;
-                this.life -= 0.005;
                 break;
+
+            default:
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.rotation !== undefined) {
+                    this.rotation += this.rotationSpeed || 0;
+                }
         }
+
+        this.life -= 0.01;
     }
 
     draw() {
@@ -166,11 +221,56 @@ class Particle {
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
                 break;
+
+            case 'hearts':
+                ctx.translate(this.x, this.y);
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.life})`;
+                ctx.beginPath();
+                ctx.moveTo(0, -this.size / 2);
+                ctx.arc(-this.size / 4, -this.size / 2, this.size / 4, Math.PI, 0);
+                ctx.arc(this.size / 4, -this.size / 2, this.size / 4, Math.PI, 0);
+                ctx.lineTo(0, this.size);
+                ctx.closePath();
+                ctx.fill();
+                break;
+
+            case 'stars':
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.life})`;
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    ctx.lineTo(0, -this.size);
+                    ctx.translate(0, -this.size);
+                    ctx.rotate((Math.PI * 2) / 5);
+                    ctx.lineTo(0, this.size);
+                    ctx.translate(0, this.size);
+                    ctx.rotate(-(Math.PI * 4) / 5);
+                }
+                ctx.closePath();
+                ctx.fill();
+                break;
+
+            case 'bubbles':
+                ctx.translate(this.x, this.y);
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.life * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+
+            case 'confetti':
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.life})`;
+                ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size / 2);
+                break;
         }
 
         ctx.restore();
     }
 }
+
 
 const particles = [];
 let mouseX = 0;
